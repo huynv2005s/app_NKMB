@@ -1,94 +1,152 @@
 // import ScrollView  from '@/components/parallax-scroll-view';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ProtectedRoute from '../ProtectedRoute';
 
 // const { width } = Dimensions.get('window');
-
+function getPregnancyInfo(pregnancyWeek: any) {
+  const totalDays = pregnancyWeek * 7;
+  const months = Math.floor(pregnancyWeek / 4.3) + 1;
+  const displayWeeks = pregnancyWeek;
+  const displayDays = totalDays % 7;
+  return { months, totalDays, displayWeeks, displayDays };
+}
 export default function HomeScreen() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { months, totalDays, displayWeeks, displayDays } = getPregnancyInfo(user?.pregnancyWeek ?? 0);
+  useEffect(() => {
+
+    const fetchUser = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+          router.replace("/login");
+          return;
+        }
+
+        // 🔹 Gọi API lấy thông tin người dùng
+        const res = await fetch("https://app-nhat-ky-me-bau.onrender.com/api/auth/me", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Không thể tải thông tin người dùng");
+
+        setUser(data.user);
+
+        // 🔹 Nếu thiếu thông tin thai kỳ → chuyển qua màn hình FillInfoScreen
+        if (!data.user.dueDate || !data.user.baby?.name || !data.user.pregnancyWeek) {
+          router.replace("../fill-info");
+        }
+      } catch (err) {
+        console.error(err);
+        router.replace("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  });
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#ff6699" />
+      </View>
+    );
+  }
   return (
-    <ScrollView>
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
+    <ProtectedRoute>
+      <ScrollView>
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" />
 
-        {/* Header với thời gian */}
-        <View style={styles.header}>
-          <Text style={styles.time}>9:41</Text>
-        </View>
+          {/* Header với thời gian */}
+          <View style={styles.header}>
+            <Text style={styles.time}>9:41</Text>
+          </View>
 
-        {/* Phần ngày tháng */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hôm nay</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.datesScrollView}
-          >
-            {[16, 17, 18, 19, 20, 21, 22, 23, 24, 25].map((day, index) => (
-              <View key={day} style={[
-                styles.dateCircle,
-                index === 4 && styles.currentDate
-              ]}>
-                <Text style={[
-                  styles.dateText,
-                  index === 4 && styles.currentDateText
+          {/* Phần ngày tháng */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Hôm nay</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.datesScrollView}
+            >
+              {[16, 17, 18, 19, 20, 21, 22, 23, 24, 25].map((day, index) => (
+                <View key={day} style={[
+                  styles.dateCircle,
+                  index === 4 && styles.currentDate
                 ]}>
-                  {day}
-                </Text>
+                  <Text style={[
+                    styles.dateText,
+                    index === 4 && styles.currentDateText
+                  ]}>
+                    {day}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+          <View style={styles.banner}>
+            <Image
+              source={{
+                uri: "https://giaophannhatrang.org/uploads/news/2021_12/icth-foetus-570x360.jpg",
+              }}
+              style={styles.image}
+            />
+          </View>
+          {/* Thông tin tuần thai */}
+          <View style={styles.week}>
+            <View style={styles.numberWeek}>
+              <Text style={styles.weekNumber}>Tuần</Text>
+              <Text style={styles.weekNumber}>
+                {displayWeeks}
+              </Text>
+            </View>
+            <View style={styles.stick}>
+
+            </View>
+            <View style={styles.contentWeek}>
+              <Text style={styles.pregnancyStatus}>
+                Bạn đang ở tháng thứ {months} của thai kỳ
+              </Text>
+              <Text style={styles.pregnancyDetails}>
+                {displayWeeks} tuần {displayDays} ngày ({totalDays} ngày)
+              </Text>
+            </View>
+          </View>
+
+          {/* Countdown đến ngày dự sinh */}
+          <View style={styles.countdownSection}>
+            <View style={styles.digitsContainer}>
+              <View style={styles.digitBox}>
+                <Text style={styles.digit}>0</Text>
               </View>
-            ))}
-          </ScrollView>
-        </View>
-        <View style={styles.banner}>
-          <Image
-            source={{
-              uri: "https://giaophannhatrang.org/uploads/news/2021_12/icth-foetus-570x360.jpg",
-            }}
-            style={styles.image}
-          />
-        </View>
-        {/* Thông tin tuần thai */}
-        <View style={styles.week}>
-          <View style={styles.numberWeek}>
-            <Text style={styles.weekNumber}>Tuần</Text>
-            <Text style={styles.weekNumber}>
-              33
-            </Text>
-          </View>
-          <View style={styles.stick}>
-
-          </View>
-          <View style={styles.contentWeek}>
-            <Text style={styles.pregnancyStatus}>
-              Bạn đang ở tháng thứ 8 của thai kỳ
-            </Text>
-            <Text style={styles.pregnancyDetails}>
-              32 tuần 5 ngày (229 ngày)
-            </Text>
-          </View>
-        </View>
-
-        {/* Countdown đến ngày dự sinh */}
-        <View style={styles.countdownSection}>
-          <View style={styles.digitsContainer}>
-            <View style={styles.digitBox}>
-              <Text style={styles.digit}>0</Text>
+              <View style={styles.digitBox}>
+                <Text style={styles.digit}>5</Text>
+              </View>
+              <View style={styles.digitBox}>
+                <Text style={styles.digit}>1</Text>
+              </View>
             </View>
-            <View style={styles.digitBox}>
-              <Text style={styles.digit}>5</Text>
-            </View>
-            <View style={styles.digitBox}>
-              <Text style={styles.digit}>1</Text>
+            <View>
+              <Text style={styles.countdownLabel}>NGÀY NỮA ĐẾN</Text>
+              <Text style={styles.dueDateLabel}>Ngày dự sinh</Text>
             </View>
           </View>
-          <View>
-            <Text style={styles.countdownLabel}>NGÀY NỮA ĐẾN</Text>
-            <Text style={styles.dueDateLabel}>Ngày dự sinh</Text>
-          </View>
-        </View>
-      </SafeAreaView>
-    </ScrollView >
+        </SafeAreaView>
+      </ScrollView >
+    </ProtectedRoute>
   );
 }
 

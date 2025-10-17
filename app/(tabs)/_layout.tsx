@@ -12,29 +12,58 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+        tabBarStyle: {
+          backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#FFFFFF',
+          borderTopColor: colorScheme === 'dark' ? '#38383A' : '#E5E5EA',
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Trang chủ",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="house.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Theo dõi",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="chart.line.uptrend.xyaxis" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="article"
+        options={{
+          title: "Kiến thức",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="book.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="diary"
+        options={{
+          title: "Nhật ký",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="pencil.and.outline" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="login"
         options={{
-          title: 'Login',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+          title: "Cá nhân",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="person.fill" color={color} />
+          ),
         }}
       />
     </Tabs>

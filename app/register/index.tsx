@@ -1,4 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -23,7 +25,7 @@ export default function Register() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
     const [acceptTerms, setAcceptTerms] = useState(false);
-
+    const router = useRouter();
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({
             ...prev,
@@ -31,7 +33,7 @@ export default function Register() {
         }));
     };
 
-    const handleRegister = () => {
+    const handleRegister = async () => {
         const { username, email, password, confirmPassword } = formData;
 
         // Validation
@@ -64,10 +66,29 @@ export default function Register() {
             Alert.alert('Lỗi', 'Vui lòng chấp nhận điều khoản sử dụng');
             return;
         }
+        try {
+            const res = await fetch("https://app-nhat-ky-me-bau.onrender.com/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password, name: username }),
+            });
+            const data = await res.json();
+            console.log(data);
+            if (res.ok) {
+                await AsyncStorage.setItem("token", data.accessToken); // ✅ Lưu token
+                setTimeout(() => {
+                    Alert.alert("Đăng nhập thành công");
+                }, 500);
+                router.replace('../(tabs)')
+            } else {
+                Alert.alert("Sai thông tin đăng ký");
+            }
+        } catch (error) {
+            Alert.alert(error.message || "Đăng ký thất bại");
 
+        }
         // Xử lý đăng ký ở đây
-        console.log('Registration Data:', formData);
-        Alert.alert('Thành công', 'Đăng ký tài khoản thành công!');
+
     };
 
     const isValidEmail = (email: string) => {

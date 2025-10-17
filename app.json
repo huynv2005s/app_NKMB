@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "my-app",
+    "name": "Nhật Ký Mẹ Bầu",
     "slug": "my-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/myicon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -50,6 +50,7 @@
       "eas": {
         "projectId": "203f815b-ecae-407b-b372-0ecfb365509d"
       }
-    }
+    },
+    "owner": "huynv2005s"
   }
 }

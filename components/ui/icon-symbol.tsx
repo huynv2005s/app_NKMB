@@ -19,6 +19,34 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'person.fill': 'person',
+  'house.fill': 'home',
+  'paperplane.fill': 'send',
+  'chevron.left.forwardslash.chevron.right': 'code',
+  'chevron.right': 'chevron-right',
+  'person.fill': 'person',
+  // Thêm các icon mới cho ứng dụng thai kỳ
+  'magnifyingglass': 'search',
+  'book.fill': 'menu-book',
+  'pencil.and.outline': 'edit',
+  'chart.line.uptrend.xyaxis': 'trending-up',
+  'book.closed.fill': 'book',
+  'lightbulb.fill': 'lightbulb',
+  'heart.fill': 'favorite',
+  'calendar': 'calendar-today',
+  'stethoscope': 'healing',
+  'bell.fill': 'notifications',
+  'figure.pregnancy': 'pregnant-woman', // Có thể cần custom icon
+  'cross.case.fill': 'medical-services',
+  'envelope': 'email',
+  'lock': 'lock',
+  'eye': 'visibility',
+  'eye.slash': 'visibility-off',
+  'checkmark': 'check',
+  'logo-google': 'google',
+  'logo-facebook': 'facebook',
+  'nutrition': 'restaurant', // hoặc 'local-dining'
+  'brain.head.profile': 'psychology',
+  'figure.walk': 'directions-walk',
 } as IconMapping;
 
 /**
