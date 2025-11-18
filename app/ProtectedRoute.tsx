@@ -15,7 +15,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
                 setIsLoggedIn(!!token);
             } finally {
                 setIsLoading(false);
-                console.log("isLoggedIn:", isLoggedIn); // ✅ Debug login state
+                console.log("isLoggedIn:", isLoggedIn); 
             }
         };
         checkLogin();
@@ -29,7 +29,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         );
     }
 
-    // ✅ Nếu chưa đăng nhập => quay về màn Login
+    
     if (!isLoggedIn) {
         return <Redirect href="/login" />;
     }

@@ -441,6 +441,7 @@ export default function Login() {
                                 <Text style={styles.signupText}>Chưa có tài khoản? </Text>
                                 <TouchableOpacity>
                                     <Text style={styles.signupLink} onPress={() => router.navigate('/register')}>Đăng ký ngay</Text>
+                                    <Text style={styles.signupLink} onPress={() => router.navigate('../admin')}>Đăng ký ngay</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>

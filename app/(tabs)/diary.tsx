@@ -45,7 +45,7 @@ export default function DiaryScreen() {
                     Authorization: `Bearer ${await AsyncStorage.getItem("token")}`,
                 },
             });
-            console.log("Deleted diary with id:", id);
+            console.log("Deleted diary with id:", id);  
             setDiaries(diaries.filter((item) => item._id !== id));
         } catch (error) {
             console.error("Error deleting diary:", error);

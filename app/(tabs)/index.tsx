@@ -4,149 +4,233 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ProtectedRoute from '../ProtectedRoute';
 
-// const { width } = Dimensions.get('window');
-function getPregnancyInfo(pregnancyWeek: any) {
-  const totalDays = pregnancyWeek * 7;
-  const months = Math.floor(pregnancyWeek / 4.3) + 1;
-  const displayWeeks = pregnancyWeek;
-  const displayDays = totalDays % 7;
-  return { months, totalDays, displayWeeks, displayDays };
+interface TimeState {
+  weeks: number;
+  days: number;
+  months: number;
+  daysLeft: number;
 }
+
 export default function HomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { months, totalDays, displayWeeks, displayDays } = getPregnancyInfo(user?.pregnancyWeek ?? 0);
-  useEffect(() => {
+  const [time, setTime] = useState<TimeState | null>(null);
+  const [timeArr, setTimeArr] = useState<number[]>([]);
+  const [dateArray, setDateArray] = useState<number[]>([]);
+  const generateWeekDays = (): number[] => {
+    const today = new Date();
+    const dates: number[] = [];
 
-    const fetchUser = async () => {
+    // Tạo 3 ngày trước today
+    for (let i = 3; i > 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date.getDate());
+    }
+
+    // Thêm today
+    dates.push(today.getDate());
+
+    // Tạo 3 ngày sau today
+    for (let i = 1; i <= 3; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date.getDate());
+    }
+
+    return dates;
+  };
+  useEffect(() => {
+    setDateArray(generateWeekDays());
+    const fetchTimeEnd = async () => {
       try {
-        const token = await AsyncStorage.getItem("token");
+        const token = await AsyncStorage.getItem('token');
         if (!token) {
-          router.replace("/login");
+          router.replace('/login');
           return;
         }
 
-        // 🔹 Gọi API lấy thông tin người dùng
-        const res = await fetch("https://app-nhat-ky-me-bau.onrender.com/api/auth/me", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          'https://app-nhat-ky-me-bau.onrender.com/api/getTimeEnd',
+          {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Không thể tải thông tin người dùng");
+        if (!res.ok) {
+          throw new Error(data.error || 'Không thể tải thông tin người dùng');
+        }
+
+        const timeData: TimeState = {
+          weeks: data.weeks,
+          days: data.days,
+          months: data.months ?? 0,
+          daysLeft: data.daysLeft,
+        };
+
+        setTime(timeData);
+
+        // Update time array
+        const array = String(timeData.daysLeft)
+          .split('')
+          .map(Number);
+        while (array.length < 3) {
+          array.unshift(0);
+        }
+        setTimeArr(array);
+      } catch (error) {
+        console.error('Error fetching time end:', error);
+      }
+    };
+
+    const fetchUser = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          router.replace('/login');
+          return;
+        }
+
+        const res = await fetch(
+          'https://app-nhat-ky-me-bau.onrender.com/api/auth/me',
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Không thể tải thông tin người dùng');
+        }
 
         setUser(data.user);
 
-        // 🔹 Nếu thiếu thông tin thai kỳ → chuyển qua màn hình FillInfoScreen
-        if (!data.user.dueDate || !data.user.baby?.name || !data.user.pregnancyWeek) {
-          router.replace("../fill-info");
+        if (
+          !data.user.dueDate ||
+          !data.user.baby?.name ||
+          !data.user.pregnancyWeek
+        ) {
+          router.replace('../fill-info');
         }
       } catch (err) {
         console.error(err);
-        router.replace("/login");
+        router.replace('/login');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
-  });
+    const initializeData = async () => {
+      await Promise.all([fetchTimeEnd(), fetchUser()]);
+    };
+
+    initializeData();
+  }, []);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#ff6699" />
       </View>
     );
   }
+
   return (
-    <ProtectedRoute>
-      <ScrollView>
-        <SafeAreaView style={styles.container}>
-          <StatusBar barStyle="dark-content" />
+    <ScrollView style={styles.scrollView}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" />
 
-          {/* Header với thời gian */}
-          <View style={styles.header}>
-            <Text style={styles.time}>9:41</Text>
-          </View>
+        {/* Header với thời gian */}
+        <View style={styles.header}>
+          <Text style={styles.time}>9:41</Text>
+        </View>
 
-          {/* Phần ngày tháng */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Hôm nay</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.datesScrollView}
-            >
-              {[16, 17, 18, 19, 20, 21, 22, 23, 24, 25].map((day, index) => (
-                <View key={day} style={[
+        {/* Phần ngày tháng */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Hôm nay</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.datesScrollView}
+          >
+            {dateArray.map((day, index) => (
+              <View
+                key={index}
+                style={[
                   styles.dateCircle,
-                  index === 4 && styles.currentDate
-                ]}>
-                  <Text style={[
+                  index === 3 && styles.currentDate,
+                ]}
+              >
+                <Text
+                  style={[
                     styles.dateText,
-                    index === 4 && styles.currentDateText
-                  ]}>
-                    {day}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-          <View style={styles.banner}>
-            <Image
-              source={{
-                uri: "https://giaophannhatrang.org/uploads/news/2021_12/icth-foetus-570x360.jpg",
-              }}
-              style={styles.image}
-            />
-          </View>
-          {/* Thông tin tuần thai */}
-          <View style={styles.week}>
-            <View style={styles.numberWeek}>
-              <Text style={styles.weekNumber}>Tuần</Text>
-              <Text style={styles.weekNumber}>
-                {displayWeeks}
-              </Text>
-            </View>
-            <View style={styles.stick}>
+                    index === 3 && styles.currentDateText,
+                  ]}
+                >
+                  {day}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
 
-            </View>
-            <View style={styles.contentWeek}>
-              <Text style={styles.pregnancyStatus}>
-                Bạn đang ở tháng thứ {months} của thai kỳ
-              </Text>
-              <Text style={styles.pregnancyDetails}>
-                {displayWeeks} tuần {displayDays} ngày ({totalDays} ngày)
-              </Text>
-            </View>
-          </View>
+        {/* Banner hình ảnh */}
+        <View style={styles.banner}>
+          <Image
+            source={{
+              uri: 'https://giaophannhatrang.org/uploads/news/2021_12/icth-foetus-570x360.jpg',
+            }}
+            style={styles.image}
+          />
+        </View>
 
-          {/* Countdown đến ngày dự sinh */}
-          <View style={styles.countdownSection}>
-            <View style={styles.digitsContainer}>
-              <View style={styles.digitBox}>
-                <Text style={styles.digit}>0</Text>
-              </View>
-              <View style={styles.digitBox}>
-                <Text style={styles.digit}>5</Text>
-              </View>
-              <View style={styles.digitBox}>
-                <Text style={styles.digit}>1</Text>
-              </View>
-            </View>
-            <View>
-              <Text style={styles.countdownLabel}>NGÀY NỮA ĐẾN</Text>
-              <Text style={styles.dueDateLabel}>Ngày dự sinh</Text>
-            </View>
+        {/* Thông tin tuần thai */}
+        <View style={styles.week}>
+          <View style={styles.numberWeek}>
+            <Text style={styles.weekNumber}>Tuần</Text>
+            <Text style={styles.weekNumber}>{time?.weeks}</Text>
           </View>
-        </SafeAreaView>
-      </ScrollView >
-    </ProtectedRoute>
+          <View style={styles.stick} />
+          <View style={styles.contentWeek}>
+            <Text style={styles.pregnancyStatus}>
+              Bạn đang ở tháng thứ {time?.months} của thai kỳ
+            </Text>
+            <Text style={styles.pregnancyDetails}>
+              {time?.weeks} tuần {time?.days} ngày (
+              {(time ? time.weeks * 7 + time.days : 0)} ngày)
+            </Text>
+          </View>
+        </View>
+
+        {/* Countdown đến ngày dự sinh */}
+        <View style={styles.countdownSection}>
+          <View style={styles.digitsContainer}>
+            {timeArr.map((item, index) => (
+              <View key={index} style={styles.digitBox}>
+                <Text style={styles.digit}>{item}</Text>
+              </View>
+            ))}
+          </View>
+          <View>
+            <Text style={styles.countdownLabel}>NGÀY NỮA ĐẾN</Text>
+            <Text style={styles.dueDateLabel}>Ngày dự sinh</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    </ScrollView>
   );
 }
 
@@ -154,6 +238,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     paddingHorizontal: 24,
@@ -166,42 +258,39 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
   },
   section: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     marginTop: 32,
   },
   week: {
-    width: "100%",
+    width: '100%',
     flexDirection: 'row',
     gap: 5,
     padding: 12,
     borderRadius: 12,
     marginTop: 32,
-    backgroundColor: "#FFFFFF"
+    backgroundColor: '#FFFFFF',
   },
   stick: {
     width: 5,
-    height: "100%",
-    backgroundColor: "#FFC7CC",
-    marginHorizontal: 12
+    height: '100%',
+    backgroundColor: '#FFC7CC',
+    marginHorizontal: 12,
   },
   numberWeek: {
-    display: "flex",
     flexDirection: 'column',
-    alignItems: "center",
+    alignItems: 'center',
     padding: 24,
-    backgroundColor: "#FFC7CC",
+    backgroundColor: '#FFC7CC',
     height: 100,
-    justifyContent: "center",
-    borderRadius: 12
+    justifyContent: 'center',
+    borderRadius: 12,
   },
   contentWeek: {
-    display: "flex",
-    // flex: 1,
-    // width: "70%",
     flexDirection: 'column',
-    alignItems: "flex-start",
-    justifyContent: "space-around",
-    borderRadius: 12
+    alignItems: 'flex-start',
+    justifyContent: 'space-around',
+    borderRadius: 12,
+    flex: 1,
   },
   sectionTitle: {
     fontSize: 20,
@@ -223,7 +312,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   currentDate: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFC7CC',
+    borderRadius: 50,
   },
   dateText: {
     fontSize: 17,
@@ -231,33 +321,31 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
   },
   currentDateText: {
-    color: '#FFFFFF',
+    color: '#000000',
   },
   weekNumber: {
     fontSize: 28,
     fontWeight: '800',
     color: '#1C1C1E',
-    // marginBottom: 8,
   },
   pregnancyStatus: {
     fontSize: 17,
     color: '#48484A',
     marginBottom: 4,
-    width: "80%"
+    width: '80%',
   },
   pregnancyDetails: {
     fontSize: 15,
     color: '#8E8E93',
   },
   countdownSection: {
-    // minHeight: 200,
     justifyContent: 'space-between',
     alignItems: 'center',
-    flexDirection: "row",
+    flexDirection: 'row',
     padding: 12,
     marginTop: 24,
     borderRadius: 12,
-    backgroundColor: "#FFFFFF"
+    backgroundColor: '#FFFFFF',
   },
   digitsContainer: {
     flexDirection: 'row',
@@ -288,20 +376,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1C1C1E',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
   banner: {
     height: 300,
-    width: "100%",
-    marginTop: 10
+    width: '100%',
+    marginTop: 10,
   },
   image: {
-    height: "100%",
-    width: "100%",
+    height: '100%',
+    width: '100%',
   },
 });
